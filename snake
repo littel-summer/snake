@@ -1,0 +1,242 @@
+package com.my.game;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.Random;
+
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+
+public class SnakePanel extends JPanel implements KeyListener,ActionListener {
+		
+	//定义7个图片的变量，代表七张图片
+	ImageIcon up=new ImageIcon("pic//up.png");//向上的蛇头
+	ImageIcon left=new ImageIcon("pic//left.png");//向左的蛇头
+	ImageIcon right=new ImageIcon("pic//right.png");//向右的蛇头
+	ImageIcon down=new ImageIcon("pic//down.png");//向下的蛇头
+	
+	ImageIcon body=new ImageIcon("pic//body.png");//蛇的身体
+	ImageIcon food=new ImageIcon("pic//food.png");//蛇的食物
+	ImageIcon title=new ImageIcon("pic//title.jpg");//游戏的界面
+	
+	//蛇的每一个部分
+	int[] snakex=new int[750]; 
+	int[] snakey=new int[750];
+	
+	//随机生成食物
+	Random rand=new Random();
+	
+	int foodx=rand.nextInt(34)*25+25;//可以根据自身设置的界面大小来确定
+	int foody=rand.nextInt(24)*25+75;
+			
+	//设置游戏的默认属性
+	int len=3;//初始化蛇身的长度
+	int score=0;//初始化游戏得分为0
+	String direction="R";//初始化目标在右
+	
+	boolean isStarted=false;//判断游戏是否开始
+	boolean isFailed=false;//判断游戏是否结束
+	
+	
+	Timer timer=new Timer(100,this);
+	
+	
+	public SnakePanel() {//定义画布的构造函数
+		this.setFocusable(true);//获取焦点
+		this.addKeyListener(this);//监听键盘事件
+		
+		setup();
+		timer.start();	
+		
+	}
+	
+	@Override
+	public void paint(Graphics g) {//获取画笔
+		this.setBackground(Color.YELLOW);//设置画布背景颜色
+		title.paintIcon(this, g, 25, 11);//放置主题图片
+		g.fillRect(25, 75, 850, 650);//用画笔设置游戏方框
+		
+		//画蛇头(判断蛇头方向)
+		if(direction.equals("R")) {
+			right.paintIcon(this, g, snakex[0], snakey[0]);//如果向右朝，就画右头
+		}else if(direction.equals("L")) {
+			left.paintIcon(this, g, snakex[0], snakey[0]);//如果向左朝，就画左头
+		}else if(direction.equals("U")) {
+			up.paintIcon(this, g, snakex[0], snakey[0]);//如果向上朝，就画上面的头
+		}else if(direction.equals("D")) {
+			down.paintIcon(this, g, snakex[0], snakey[0]);//如果向下朝，就画下头
+		}
+	
+		//画蛇的身体
+		for(int i=1;i<len;i++) {
+			body.paintIcon(this, g, snakex[i], snakey[i]);
+		}
+		
+		//如果游戏没开始显示
+		if(!isStarted) {
+			g.setFont(new Font("arial",Font.BOLD, 30));
+			g.drawString("Press Space to start / pause", 200, 300);
+			
+		}
+		
+		
+	
+		//判断如果游戏还没开始
+		if(isFailed) {
+			g.setColor(Color.WHITE);//结束了就显示白色
+			g.setFont(new Font("arial", Font.BOLD, 30));//设置字体
+			g.drawString("Game Over! Press space to start again", 200, 300);//结束了就在页面显示标语
+		}
+		
+		//显示食物
+		food.paintIcon(this, g, foodx, foody);
+		
+		//设置分数和蛇的长度
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("arial", Font.PLAIN, 15));
+		g.drawString("Score:"+score, 650, 37);//显示分数
+		g.drawString("Len:"+len, 650, 57);//显示蛇的长度
+	
+	}
+	
+		public void setup() {//设置游戏初始化
+			isStarted=false;
+			isFailed=false;
+			len=3;//开始长度为3
+			score=0;//开始没有分数
+			snakex[0]=100;snakex[1]=75;snakex[2]=50;//开始蛇的位置x
+			snakey[0]=100;snakey[1]=100;snakey[2]=100;//开始蛇的位置y
+			
+		}
+	
+		
+		@Override
+		public void keyPressed(KeyEvent e) {
+				
+			//实现键盘响应
+			int keycode=e.getKeyCode();
+			if(keycode==KeyEvent.VK_SPACE) {//如果敲击空格键实现/消除提示信息
+				if(isFailed) {
+					setup();//如果还每开始，就执行初始化
+				}else {
+					isStarted=!isStarted;//否则就不开始
+				}
+			}else if(keycode==KeyEvent.VK_UP&&direction!="D") {
+				direction="U";//如果按下了up或者方向不再下面的话，将蛇头设置为向上
+			}else if(keycode==KeyEvent.VK_DOWN&&direction!="U") {
+				direction="D";//如果按下了down或者方向不在上面，将蛇头设置为下
+			}else if(keycode==KeyEvent.VK_LEFT&&direction!="R") {
+				direction="L";//如果按下了左或者方向不在右边的话，将蛇头设置为左
+			}else if(keycode==KeyEvent.VK_RIGHT&&direction!="L") {
+				direction="R";//如果按下了right或者方向不在左边的话，将蛇头设置为右
+			}
+			
+		}
+	
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			//1。再定义一个闹钟
+			timer.start();
+			
+			//2.移动数据
+			if(isStarted&&!isFailed) {
+				//移动身体
+				for(int i=len;i>0;i--) {
+					snakex[i]=snakex[i-1];
+					snakey[i]=snakey[i-1];
+				}
+			
+			
+			//移动头
+			if(direction.equals("R")) {
+				snakex[0]=snakex[0]+25;
+				if(snakex[0]>850) {
+					snakex[0]=25;
+				}
+			}else if(direction.equals("L")) {
+				snakex[0]=snakex[0]-25;
+				if(snakex[0]<25) {
+					snakex[0]=850;
+				}
+			}else if(direction.equals("U")) {
+				snakey[0]=snakey[0]-25;
+				if(snakey[0]<75) {
+					snakey[0]=650;
+				}
+			}else if(direction.equals("D")) {
+				snakey[0]=snakey[0]+25;
+				if(snakey[0]>650) {
+					snakey[0]=75;
+				}
+			}
+			}
+			
+			if(snakex[0]==foodx&&snakey[0]==foody) {//吃食物
+				len++;
+				score++;
+				foodx=rand.nextInt(34)*25+25;
+				foody=rand.nextInt(24)*25+75;
+			}	
+			
+			
+			for(int i=1;i<len;i++) {//如果蛇头碰到了自己游戏结束
+				if(snakex[0]==snakex[i]&&snakey[0]==snakey[i]) {
+					isFailed=true;
+				}
+			}
+			
+			//重画
+			repaint();
+			
+		}
+	
+		@Override
+		public void keyTyped(KeyEvent e) {
+			
+		}
+
+		
+		@Override
+		public void keyReleased(KeyEvent e) {
+			
+		}
+		
+	
+	
+}
+
+=================================================================
+package com.my.game;
+
+import javax.swing.JFrame;
+
+public class Snake extends JFrame{
+		public static void main(String[]args) {
+			JFrame frame=new JFrame();//创建游戏界面的框架
+			frame.setBounds(10, 10, 900, 720);//设置框架的大小
+			frame.setResizable(false);//设置为用户不能自己改变大小
+			
+			//点击关闭按钮，关闭界面
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			
+			SnakePanel panel=new SnakePanel();//添加画布
+			frame.add(panel);//刚添加时，画布为空看不见
+			
+			frame.setVisible(true);//设置窗口可见
+			
+			
+			
+		}
+		
+		
+	
+}
+
+
